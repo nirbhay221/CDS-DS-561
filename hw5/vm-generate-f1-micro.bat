@@ -1,0 +1,17 @@
+gcloud compute instances create instance-1 ^
+    --project=cdsds561-project-1 ^
+    --zone=us-east1-b ^
+    --machine-type=f1-micro ^
+    --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default ^
+    --maintenance-policy=MIGRATE ^
+    --provisioning-model=STANDARD ^
+    --service-account=cloud-sql-authorize-vm@cdsds561-project-1.iam.gserviceaccount.com ^
+    --scopes=https://www.googleapis.com/auth/cloud-platform ^
+    --tags=http-server,https-server,lb-health-check ^
+    --create-disk=auto-delete=yes,boot=yes,device-name=instance-6,image=projects/debian-cloud/global/images/debian-11-bullseye-v20231010,mode=rw,size=10,type=projects/cdsds561-project-1/zones/us-central1-a/diskTypes/pd-balanced ^
+    --no-shielded-secure-boot ^
+    --shielded-vtpm ^
+    --shielded-integrity-monitoring ^
+    --labels=goog-ec-src=vm_add-gcloud ^
+    --reservation-affinity=any ^
+    --metadata startup-script-url=gs://hw4nirbhgsutil/bash-script.sh

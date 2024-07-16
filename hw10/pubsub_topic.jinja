@@ -1,0 +1,29 @@
+resources:
+- name: my-pubsub-topic
+  type: pubsub.v1.topic
+  properties:
+    topic: my-pubsub-topic
+  accessControl:
+    gcpIamPolicy:
+      bindings:
+        - role: roles/pubsub.subscriber
+          members:
+            - "serviceAccount:k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com"
+        - role: roles/pubsub.admin
+          members:
+            - "serviceAccount:k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com"
+
+- name: pubsub-subscription
+  type: pubsub.v1.subscription
+  properties:
+    subscription: my-pubsub-sub
+    topic: $(ref.my-pubsub-topic.name)
+  accessControl:
+    gcpIamPolicy:
+      bindings:
+        - role: roles/pubsub.subscriber
+          members:
+            - "serviceAccount:k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com"
+  metadata:
+    dependsOn:
+      - my-pubsub-topic

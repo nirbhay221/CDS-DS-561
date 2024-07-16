@@ -1,0 +1,188 @@
+imports:
+- path: sqladmin.py
+- path: pubsub_topic.jinja
+- path: serviceaccounts.py
+
+resources:
+- name: database
+  type: sqladmin.py
+  properties:
+    tier: db-n1-standard-1
+    region: us-east1
+    readReplicas: 1
+    failOver: false
+    replicationType: SYNCHRONOUS
+    databaseName: Fourth-Trial
+    userPassword: admin
+
+- name: service-accounts
+  type: serviceaccounts.py
+  properties:
+    project: cdsds561-project-1
+    service-account: k8s-service-account
+
+- name: my-pubsub-topic
+  type: pubsub_topic.jinja
+  properties:
+    serviceAccountId: k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com
+
+
+- type: storage.v1.bucket
+  name: hw8nirbhgsutil
+  properties:
+    location: us-east1
+    storageClass: STANDARD
+    acl:
+    - entity: allUsers
+      role: READER
+    defaultObjectAcl:
+    - entity: allUsers
+      role: READER
+
+
+- name: my-vm
+  type: compute.v1.instance
+  properties:
+    zone: us-east1-b
+    machineType: https://www.googleapis.com/compute/v1/projects/cdsds561-project-1/zones/us-east1-b/machineTypes/f1-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-11
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/cdsds561-project-1/global/networks/default
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    serviceAccounts:
+    - email: k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com
+      scopes:
+      - https://www.googleapis.com/auth/cloud-platform
+      - https://www.googleapis.com/auth/sqlservice.admin
+      - https://www.googleapis.com/auth/logging.admin
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          mkdir -p ./tmp
+          cd ./tmp/
+          echo "Updating package list..."
+          sudo apt update -y
+          echo "Installing Python 3..."
+          sudo apt install -y python3
+          echo "Installing Python 3 pip..."
+          sudo apt install -y python3-distutils python3-lib2to3
+          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+          python3 get-pip.py
+          echo "Installing Google Cloud Python libraries..."
+          python3 -m pip install google-cloud-storage
+          python3 -m pip install google-cloud-logging
+          python3 -m pip install google-cloud-pubsub
+          python3 -m pip install google-auth
+          python3 -m pip install google-auth-oauthlib
+          python3 -m pip install google-cloud-storage
+          python3 -m pip install flask
+          echo "Installing Google Cloud SDK..."
+          sudo apt-get install -y google-cloud-sdk
+          echo "Installing Google Cloud SQL..."
+          sleep 30
+          /usr/bin/wget https://dev.mysql.com/get/Downloads/MySQL-8.2/mysql-server_8.2.0-1debian11_amd64.deb-bundle.tar
+          /bin/tar -xvf /path/to/mysql-server_8.2.0-1debian11_amd64.deb-bundle.tar
+          sudo apt-get install libaio1
+          echo "Check - 1 "
+          sudo dpkg-preconfigure mysql-community-server_*.deb
+          echo "Check - 2 "
+          sudo dpkg -i mysql*.deb
+          echo "Check - 3 "
+          sudo apt-get -f install
+          echo "Check - 4 "
+          python3 -m pip install pymysql
+          python3 -m pip install sqlalchemy
+          python3 -m pip install "cloud-sql-python-connector[pymysql]"
+          GCS_BUCKET="hw4nirbhgsutil"
+          OBJECT_NAME="key.json"
+
+          KEY_GENERATE_FILES="cdsds561-project-1-3185d9128a0f.json"
+          GENERATE_FILES="generate-content-check.py"
+          gsutil cp gs://$GCS_BUCKET/$KEY_GENERATE_FILES /tmp/$KEY_GENERATE_FILES
+          gsutil cp gs://$GCS_BUCKET/$GENERATE_FILES .
+          python3 generate-content-check.py -n 10000 -m 250
+          gcloud projects add-iam-policy-binding cdsds561-project-1 \
+          --member=serviceAccount:cloud-sql-authorize-vm-yaml@cdsds561-project-1.iam.gserviceaccount.com \
+          --role=roles/storage.objectCreator
+          gsutil -m cp *.html gs://hw8nirbhgsutil/test-dir
+          gsutil cp gs://$GCS_BUCKET/$OBJECT_NAME .
+          GCS_BUCKET="hw4nirbhgsutil"
+          OBJECT_NAME="check-main-3.py"
+          echo "Copying $OBJECT_NAME from Google Cloud Storage..."
+          gsutil cp gs://$GCS_BUCKET/$OBJECT_NAME .
+          echo "Executing check_main.py..."
+          python3 check-main-3.py
+
+
+
+- name: my-vm-2
+  type: compute.v1.instance
+  properties:
+    zone: us-east1-b
+    machineType: https://www.googleapis.com/compute/v1/projects/cdsds561-project-1/zones/us-east1-b/machineTypes/f1-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-11
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/cdsds561-project-1/global/networks/default
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    serviceAccounts:
+    - email: k8s-service-account@cdsds561-project-1.iam.gserviceaccount.com
+      scopes:
+      - https://www.googleapis.com/auth/cloud-platform
+      - https://www.googleapis.com/auth/sqlservice.admin
+      - https://www.googleapis.com/auth/logging.admin
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          echo "Updating package list..."
+          sudo apt update -y
+          echo "Installing Python 3..."
+          sudo apt install -y python3
+          echo "Installing Python 3 pip..."
+          sudo apt install -y python3-distutils python3-lib2to3
+          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+          python3 get-pip.py
+          echo "Installing Google Cloud Python libraries..."
+          python3 -m pip install google-cloud-storage
+          python3 -m pip install google-cloud-logging
+          python3 -m pip install google-cloud-pubsub
+          python3 -m pip install google-auth
+          python3 -m pip install google-auth-oauthlib
+          python3 -m pip install google-cloud-storage
+          python3 -m pip install flask
+          echo "Installing Google Cloud SDK..."
+          sudo apt-get install -y google-cloud-sdk
+          echo "Installing Google Cloud SQL..."
+          sleep 30
+          /usr/bin/wget https://dev.mysql.com/get/Downloads/MySQL-8.2/mysql-server_8.2.0-1debian11_amd64.deb-bundle.tar
+          /bin/tar -xvf /path/to/mysql-server_8.2.0-1debian11_amd64.deb-bundle.tar
+          sudo apt-get install libaio1
+          echo "Check - 1 "
+          sudo dpkg-preconfigure mysql-community-server_*.deb
+          echo "Check - 2 "
+          sudo dpkg -i mysql*.deb
+          echo "Check - 3 "
+          sudo apt-get -f install
+          echo "Check - 4 "
+          python3 -m pip install pymysql
+          python3 -m pip install sqlalchemy
+          python3 -m pip install "cloud-sql-python-connector[pymysql]"
